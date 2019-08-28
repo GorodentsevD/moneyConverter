@@ -14,46 +14,40 @@ import (
 type ClientData struct {
 	Valute1 string
 	Valute2 string
-	Value string
+	Value   string
+	Source  string
 }
 
 type FormattedValute struct {
-	Nominal float64
+	Nominal  float64
 	SellRate float64
-	BuyRate float64
+	BuyRate  float64
 }
 
 func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 
 	var clientQuery ClientData
+	val := db.GetAllCharCodes(dataBase, tableName)
 
-	var Valutes = db.GetAllCharCodes(dataBase, tableName)
-
-	http.HandleFunc("/table", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := fmt.Fprint(writer, d.ShowCourses())
-		if err != nil {
-			panic(err)
-		}
-	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
 		t, err := template.ParseFiles("templates/index.html")
 		if err != nil {
 			panic(err)
 		}
 
-		err = t.Execute(w, Valutes)
+		err = t.Execute(w, &val)
 		if err != nil {
 			panic(err)
 		}
 	})
-
 	http.HandleFunc("/result", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-
+		if r.Method == "GET" {
 			clientQuery = ClientData{
 				Valute1: r.FormValue("Valute1"),
 				Valute2: r.FormValue("Valute2"),
-				Value: r.FormValue("Value"),
+				Value:   r.FormValue("Value"),
+				Source:  r.FormValue("Source"),
 			}
 
 			res, err := json.Marshal(getResult(clientQuery, dataBase, tableName))
@@ -67,7 +61,10 @@ func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 	})
 
 	fmt.Println("Server is listening...")
-	http.ListenAndServe(":8181", nil)
+	err := http.ListenAndServe(":8181", nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getResult(data ClientData, dataBase sqlx.DB, tableName string) float64 {
@@ -80,10 +77,10 @@ func getResult(data ClientData, dataBase sqlx.DB, tableName string) float64 {
 
 	var err error
 
-	valute1 = db.GetValuteByCharCode(dataBase, data.Valute1, tableName)
-	valute2 = db.GetValuteByCharCode(dataBase, data.Valute2, tableName)
+	valute1 = db.GetValuteByCharCode(dataBase, data.Valute1, tableName, data.Source)
+	valute2 = db.GetValuteByCharCode(dataBase, data.Valute2, tableName, data.Source)
 
-	formattedValute1.Nominal, err = strconv.ParseFloat(valute1.Nominal,  64)
+	formattedValute1.Nominal, err = strconv.ParseFloat(valute1.Nominal, 64)
 	if err != nil {
 		panic(err)
 	}
@@ -108,8 +105,8 @@ func getResult(data ClientData, dataBase sqlx.DB, tableName string) float64 {
 		panic(err)
 	}
 
-	fmt.Printf("\n***VALUES***\n\nvalue = %f\n\nVALUE 1: \nSell = %f\nNominal = %f\n\nVALUTE 2:\nSell = %f\nNominal = %f",
-		value, formattedValute1.SellRate, formattedValute1.Nominal, formattedValute2.SellRate, formattedValute2.Nominal)
+	//fmt.Printf("\n***VALUES***\n\nvalue = %f\n\nVALUE 1: \nSell = %f\nNominal = %f\n\nVALUTE 2:\nSell = %f\nNominal = %f",
+	//	value, formattedValute1.SellRate, formattedValute1.Nominal, formattedValute2.SellRate, formattedValute2.Nominal)
 
 	result := value * (formattedValute1.SellRate / formattedValute1.Nominal) /
 		(formattedValute2.BuyRate / formattedValute2.Nominal)

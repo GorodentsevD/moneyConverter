@@ -7,14 +7,12 @@ import (
 
 type THData struct {
 	Descriptions []Description `xml:"item"`
-	ValuteList []Valute
+	ValuteList   []Valute
 }
-
 
 type Description struct {
 	Desc string `xml:"title"`
 }
-
 
 func (d *THData) Parse() {
 
@@ -37,15 +35,15 @@ func (d *THData) Parse() {
 			if tokens[i][11] == "Buying" && tokens[i][12] == "Sight" {
 				valute.BuyRate = tokens[i][1]
 			}
-			if tokens[i + 2][5] == valute.CharCode && (tokens[i + 2][11] == "Selling") {
-				valute.SellRate = tokens[i + 2][1]
+			if tokens[i+2][5] == valute.CharCode && (tokens[i+2][11] == "Selling") {
+				valute.SellRate = tokens[i+2][1]
 				i += 2
 			}
 		} else {
 			if tokens[i][10] == "Buying" {
 				valute.BuyRate = tokens[i][1]
 			}
-			if tokens[i + 1][10] == "Selling" {
+			if tokens[i+1][10] == "Selling" {
 				valute.SellRate = tokens[i][1]
 				i += 1
 			} else {
@@ -53,6 +51,7 @@ func (d *THData) Parse() {
 				continue
 			}
 		}
+		valute.Source = "THB"
 		d.ValuteList = append(d.ValuteList, valute)
 	}
 }
@@ -65,18 +64,21 @@ func ShowValutes(valuteList []Valute) {
 			valuteList[i].Nominal,
 			valuteList[i].SellRate,
 			valuteList[i].BuyRate,
-			)
+		)
 	}
 }
 
-
-func (d THData) ShowCourses() string{
+func (d THData) ShowCourses() {
 
 	var str string
-	for i := 0; i < len(d.Descriptions); i++ {
-		str += fmt.Sprintf("%s\n",
-			d.Descriptions[i].Desc,
+	for i := 0; i < len(d.ValuteList); i++ {
+		str += fmt.Sprintf("%s, %s, %s, %s. %s\n",
+			d.ValuteList[i].CharCode,
+			d.ValuteList[i].Nominal,
+			d.ValuteList[i].SellRate,
+			d.ValuteList[i].BuyRate,
+			d.ValuteList[i].Source,
 		)
 	}
-	return str
+	fmt.Println(str)
 }

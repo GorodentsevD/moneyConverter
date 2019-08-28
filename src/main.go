@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./db"
+	. "./db"
 	. "./parser"
 	"bytes"
 	"encoding/xml"
@@ -18,6 +18,8 @@ const DbName = "valutes"
 
 const CBRTable = "cbrValutes"
 const THTABLE = "thValutes"
+
+const Table = "valutes"
 
 const Driver = "mysql"
 
@@ -60,15 +62,16 @@ func main() {
 	cbrData.Parse()
 	thData.Parse()
 
-	dataBase = db.ConnectToDB(Driver, DbName, User, Password)
+	cbrData.ShowCourses()
+	thData.ShowCourses()
 
-	db.AddToTable(&dataBase, CBRTable, cbrData.ValuteList)
-	db.AddToTable(&dataBase, THTABLE, thData.ValuteList)
+	dataBase = ConnectToDB(Driver, DbName, User, Password)
+	CreateTable(&dataBase, Table)
+
+	AddToTable(&dataBase, Table, thData.ValuteList)
+	AddToTable(&dataBase, Table, cbrData.ValuteList)
 
 	// запуск веб-сервера
-	StartServer(cbrData, dataBase, CBRTable)
+	StartServer(cbrData, dataBase, Table)
 
 }
-
-
-

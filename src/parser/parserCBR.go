@@ -11,22 +11,26 @@ type CBRData struct {
 	ValuteList []Valute `xml:"Valute"`
 }
 
-func (d CBRData) ShowCourses() string{
+func (d CBRData) ShowCourses() {
 
 	var str string
 	for i := 0; i < len(d.ValuteList); i++ {
-		str += fmt.Sprintf("%3s	%6s	%7s\n",
+		str += fmt.Sprintf("%3s	%6s	%7s %s %s\n",
 			d.ValuteList[i].CharCode,
 			d.ValuteList[i].Nominal,
 			d.ValuteList[i].SellRate,
+			d.ValuteList[i].BuyRate,
+			d.ValuteList[i].Source,
 		)
 	}
-	return str
+	fmt.Println(str)
 }
 
 func (d CBRData) Parse() {
 	for i := 0; i < len(d.ValuteList); i++ {
 		d.ValuteList[i].SellRate = strings.Replace(d.ValuteList[i].SellRate, ",", ".", 1)
+		d.ValuteList[i].Source = "CBR"
+		d.ValuteList[i].BuyRate = d.ValuteList[i].SellRate
 	}
 }
 

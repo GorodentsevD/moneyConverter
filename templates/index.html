@@ -25,28 +25,41 @@
         margin-left: 10px;
         margin-right: 10px;
     }
+    #Source {
+        width: 100%;
+    }
+    #selectValute {
+        display:none;
+    }
 </style>
 <body>
     <div class="container h-100">
         <div class="row justify-content-center align-items-center">
+            <div class="col">
+                <select class="form-control" id="Source">
+                    <option value="" disabled selected>Источник</option>
+                    <option value="THB">Банк Тайланда</option>
+                    <option value="CBR">ЦБР</option>
+                </select>
+            </div>
+            <div class="row justify-content-center align-items-center" id="query">
                 <input id="Value" type="number" size="3" min="0" value="1" step="0.1" class="form-control">
 
                 <select id="Valute1" class="form-control">
                     {{range .}}
-                        <option CharCode="{{.}}">{{.}}</option>
+                        <option id="selectValute" value="{{.Source}}" >{{.CharCode}}</option>
                     {{end}}
                 </select>
                 <a>перевести в</a>
-
                 <select id="Valute2" class="form-control">
                     {{range .}}
-                    <option CharCode="{{.}}">{{.}}</option>
+                        <option id="selectValute" value="{{.Source}}">{{.CharCode}}</option>
                     {{end}}
                 </select>
 
                 <button id="send" class="btn btn-secondary">=</button>
-
                 <input id="result" class="form-control" readonly>
+            </div>
         </div>
     </div>
 </body>
@@ -56,19 +69,69 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 
 <script>
+    $.fn.showOption = function() {
+        this.each(function() {
+            if( this.tagName == "OPTION" ) {
+                var opt = this;
+                if( $(this).parent().get(0).tagName == "SPAN" ) {
+                    var span = $(this).parent().get(0);
+                    $(span).replaceWith(opt);
+                    $(span).remove();
+                }
+                opt.disabled = false;
+                $(opt).show();
+            }
+        });
+        return this;
+    }
+    $.fn.hideOption = function() {
+        this.each(function() {
+            if( this.tagName == "OPTION" ) {
+                var opt = this;
+                if( $(this).parent().get(0).tagName == "SPAN" ) {
+                    var span = $(this).parent().get(0);
+                    $(span).hide();
+                } else {
+                    $(opt).wrap("span").hide();
+                }
+                opt.disabled = true;
+            }
+        });
+        return this;
+    }
+
+    $(document).ready(function() {
+        $('#query').hide();
+
+        $('#Source').change(function () {
+            var val = $(this).val();
+
+            if(val !== "") {
+                $('#query').show();
+
+                $("#Valute1 option[value!='" + val + "']").hide();
+                $("#Valute1 option[value='" + val + "']").show();
+
+                $("#Valute2 option[value!='" + val + "']").hide();
+                $("#Valute2 option[value='" + val + "']").show();
+            }
+        });
+    });
+
     $('#send').click(function() {
         $.ajax({
             url: "http://localhost:8181/result",
-            method: "POST",
-            data : { Valute1: $("#Valute1 option:selected").val(),
-                     Valute2: $("#Valute2 option:selected").val(),
-                     Value: $("#Value").val()
+            method: "GET",
+            data: { Valute1: $("#Valute1 option:selected").text(),
+                    Valute2: $("#Valute2 option:selected").text(),
+                    Value: $("#Value").val(),
+                    Source: $("#Source option:selected").val()
             },
             success : function(result) {
-                //alert(data);
                 $('#result').val(result)
             }
         });
     });
+
 </script>
 </html>
