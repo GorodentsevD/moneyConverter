@@ -11,6 +11,7 @@ import (
 	"strconv"
 )
 
+// структура для данных, полученных от клиента
 type ClientData struct {
 	Valute1 string
 	Valute2 string
@@ -18,19 +19,20 @@ type ClientData struct {
 	Source  string
 }
 
+// структура для хранения данных, полученных из бд
 type FormattedValute struct {
 	Nominal  float64
 	SellRate float64
 	BuyRate  float64
 }
 
+// запуск приложения
 func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 
 	var clientQuery ClientData
 	val := db.GetAllCharCodes(dataBase, tableName)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
 		t, err := template.ParseFiles("templates/index.html")
 		if err != nil {
 			panic(err)
@@ -67,6 +69,7 @@ func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 	}
 }
 
+// получить результат конвертирования
 func getResult(data ClientData, dataBase sqlx.DB, tableName string) float64 {
 
 	var valute1 parser.Valute
