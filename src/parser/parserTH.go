@@ -10,46 +10,52 @@ import (
 	"strings"
 )
 
+// структура для данных банка Тайланда
 type THData struct {
 	Descriptions []Description `xml:"item"`
-	ValuteList   []Valute
-	Source       string
-	XML          []byte
+	ValuteList   []Valute      // список валют
+	Source       string        // url источника
+	XML          []byte        // xml источника
 }
 
+// структура для хранения тайтла(именно это поле будет парситься, тк в нем содержаться все нужные данные)
 type Description struct {
 	Desc string `xml:"title"`
 }
 
+// функция парсинга данных из загру
 func (data *THData) Parse() {
-
+	// очистка списка валют
 	data.ValuteList = nil
 
 	var valuteList []Valute = nil
 	var str string
 	var tokens = make([][]string, len(data.Descriptions))
 
-	for i := 0; i < len(data.Descriptions); i++ {
+	for i := 0; i < len(data.Descriptions); i++ { // разбитие заголовка в xml на токены
 		str = data.Descriptions[i].Desc
 		tokens[i] = make([]string, 12)
 		tokens[i] = strings.Split(str, " ")
 	}
 
-	for i := 1; i < len(data.Descriptions); i++ {
+	for i := 1; i < len(data.Descriptions); i++ { // цикл прохода по всем данным
 		var valute Valute
 
 		valute.CharCode = tokens[i][5]
 		valute.Nominal = tokens[i][4]
 
+		// если в строке на 10 позиции слово average
 		if tokens[i][10] == "Average" {
+			// если в строке есть выражение Buying Sight, то загружаем ставку покупки
 			if tokens[i][11] == "Buying" && tokens[i][12] == "Sight" {
 				valute.BuyRate = tokens[i][1]
 			}
+			// если в строке есть слово Selling, то загружаем ставку продажи
 			if tokens[i+2][5] == valute.CharCode && (tokens[i+2][11] == "Selling") {
 				valute.SellRate = tokens[i+2][1]
 				i += 2
 			}
-		} else {
+		} else { // иначе прочитали не average ставку, поэтому токены находятся на других позициях
 			if tokens[i][10] == "Buying" {
 				valute.BuyRate = tokens[i][1]
 			}
@@ -61,12 +67,13 @@ func (data *THData) Parse() {
 				continue
 			}
 		}
-		valute.Source = "THB"
+		valute.Source = "THB" // объявляем источник для валюты
 		valuteList = append(valuteList, valute)
 	}
-	data.ValuteList = valuteList
+	data.ValuteList = valuteList // загружаем список валют в структуру
 }
 
+// функция вывода курсов валют из структуры
 func (data THData) ShowCourses() {
 
 	var str string
@@ -82,6 +89,7 @@ func (data THData) ShowCourses() {
 	fmt.Println(str)
 }
 
+// функция загрузки данных из источника
 func (data *THData) LoadFromSource() {
 	data.Descriptions = nil
 
@@ -105,6 +113,7 @@ func (data *THData) LoadFromSource() {
 	}
 }
 
+// функция получения списка валют
 func (d THData) GetValuteList() []Valute {
 	return d.ValuteList
 }

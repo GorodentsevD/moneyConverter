@@ -10,12 +10,14 @@ import (
 	"strings"
 )
 
+// структура для данных ЦБР
 type CBRData struct {
 	ValuteList []Valute `xml:"Valute"`
 	Source     string
 	XML        []byte
 }
 
+// вывод списка валют
 func (d CBRData) ShowCourses() {
 
 	var str string
@@ -31,17 +33,23 @@ func (d CBRData) ShowCourses() {
 	fmt.Println(str)
 }
 
+// функция парсинга данных
 func (d *CBRData) Parse() {
 	for i := 0; i < len(d.ValuteList); i++ {
+		// замена запятых на точки в ставке продажи
 		d.ValuteList[i].SellRate = strings.Replace(d.ValuteList[i].SellRate, ",", ".", 1)
+
+		// инициализация источника валюты
 		d.ValuteList[i].Source = "CBR"
+
+		// копируем ставку продажи в ставку покупки тк в ЦБР есть только одна ставка
 		d.ValuteList[i].BuyRate = d.ValuteList[i].SellRate
 	}
 }
 
+// функция загрузки данных из источника
 func (data *CBRData) LoadFromSource() {
-
-	data.ValuteList = nil
+	data.ValuteList = nil // очищаем список валют в структуре тк функция может вызваться в программе несколько раз
 
 	req, err := http.Get(data.Source)
 	defer req.Body.Close()
@@ -63,6 +71,7 @@ func (data *CBRData) LoadFromSource() {
 	}
 }
 
+// функция получение списка валют
 func (data CBRData) GetValuteList() []Valute {
 	return data.ValuteList
 }

@@ -8,11 +8,13 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// структура для отправки кодов валют клиенту
 type ValuteCode struct {
 	CharCode string `db:"CharCode" json:"CharCode"`
 	Source   string `db:"Source" json:"Source"`
 }
 
+// функция подключения к базе данных(создание базы)
 func ConnectToDB(driver string, dbName string, user string, password string) sqlx.DB {
 
 	connectString := fmt.Sprintf("%s:%s@tcp(localhost:3306)/", user, password)
@@ -33,6 +35,7 @@ func ConnectToDB(driver string, dbName string, user string, password string) sql
 	return *conn
 }
 
+// функция создания таблицы в базе данных
 func CreateTable(conn *sqlx.DB, tableName string) {
 	err := conn.Ping()
 	if err != nil {
@@ -52,6 +55,7 @@ func CreateTable(conn *sqlx.DB, tableName string) {
 	conn.MustExec(schema) // создание таблицы по шаблону schema
 }
 
+// функция загрузки валют в таблицу
 func AddToTable(conn *sqlx.DB, tableName string, ValuteList []Valute) {
 	err := conn.Ping()
 	if err != nil {
@@ -74,13 +78,13 @@ func AddToTable(conn *sqlx.DB, tableName string, ValuteList []Valute) {
 		}
 	}
 
-	fmt.Println(ValuteList)
-	_, err = conn.Exec(insertIntoDB)
+	_, err = conn.Exec(insertIntoDB) // зугрузка данных в базу
 	if err != nil {
 		panic(err)
 	}
 }
 
+// получение валюты по коду
 func GetValuteByCharCode(conn sqlx.DB, CharCode string, tableName string, source string) Valute {
 	var valute Valute
 
@@ -93,6 +97,7 @@ func GetValuteByCharCode(conn sqlx.DB, CharCode string, tableName string, source
 	return valute
 }
 
+// получить список кодов валют
 func GetAllCharCodes(conn sqlx.DB, tableName string) []ValuteCode {
 
 	query := fmt.Sprintf("SELECT CharCode, Source FROM %s", tableName)
@@ -114,8 +119,8 @@ func GetAllCharCodes(conn sqlx.DB, tableName string) []ValuteCode {
 	return valuteList
 }
 
+// обновление данных в таблице
 func RefreshTable(conn *sqlx.DB, tableName string, data ...Parser) {
-	fmt.Println("Refresh is start")
 	err := conn.Ping()
 	if err != nil {
 		panic(err)
@@ -125,14 +130,12 @@ func RefreshTable(conn *sqlx.DB, tableName string, data ...Parser) {
 	CreateTable(conn, tableName)
 
 	var valuteList []Valute
-	for i, singleData := range data {
-		fmt.Printf("Refresh #%d\n", i)
+	for _, singleData := range data {
 		singleData.LoadFromSource()
 		singleData.Parse()
 		valuteList = singleData.GetValuteList()
-		fmt.Println(valuteList)
 		AddToTable(conn, tableName, valuteList)
 	}
 
-	fmt.Println("Refresh is done")
+	fmt.Println("Refresh of db is done")
 }
