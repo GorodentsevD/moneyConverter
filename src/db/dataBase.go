@@ -74,8 +74,7 @@ func AddToTable(conn *sqlx.DB, tableName string, ValuteList []Valute) {
 		}
 	}
 
-	fmt.Println(insertIntoDB)
-
+	fmt.Println(ValuteList)
 	_, err = conn.Exec(insertIntoDB)
 	if err != nil {
 		panic(err)
@@ -83,11 +82,9 @@ func AddToTable(conn *sqlx.DB, tableName string, ValuteList []Valute) {
 }
 
 func GetValuteByCharCode(conn sqlx.DB, CharCode string, tableName string, source string) Valute {
-
 	var valute Valute
 
 	query := fmt.Sprintf("SELECT * FROM %s WHERE CharCode=\"%s\" AND Source=\"%s\"", tableName, CharCode, source)
-
 	err := conn.Get(&valute, query)
 	if err != nil {
 		panic(err)
@@ -99,7 +96,6 @@ func GetValuteByCharCode(conn sqlx.DB, CharCode string, tableName string, source
 func GetAllCharCodes(conn sqlx.DB, tableName string) []ValuteCode {
 
 	query := fmt.Sprintf("SELECT CharCode, Source FROM %s", tableName)
-
 	rows, err := conn.Query(query)
 	if err != nil {
 		panic(err)
@@ -108,10 +104,35 @@ func GetAllCharCodes(conn sqlx.DB, tableName string) []ValuteCode {
 	var valuteList []ValuteCode
 	var valute ValuteCode
 	for rows.Next() {
-		rows.Scan(&valute.CharCode, &valute.Source)
-		fmt.Println((valute))
+		err = rows.Scan(&valute.CharCode, &valute.Source)
+		if err != nil {
+			panic(err)
+		}
 		valuteList = append(valuteList, valute)
 	}
 
 	return valuteList
+}
+
+func RefreshTable(conn *sqlx.DB, tableName string, data ...Parser) {
+	fmt.Println("Refresh is start")
+	err := conn.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	// используем данную функцию для сброса таблицы
+	CreateTable(conn, tableName)
+
+	var valuteList []Valute
+	for i, singleData := range data {
+		fmt.Printf("Refresh #%d\n", i)
+		singleData.LoadFromSource()
+		singleData.Parse()
+		valuteList = singleData.GetValuteList()
+		fmt.Println(valuteList)
+		AddToTable(conn, tableName, valuteList)
+	}
+
+	fmt.Println("Refresh is done")
 }

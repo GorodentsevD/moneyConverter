@@ -1,7 +1,10 @@
 package parser
 
 import (
+	"bytes"
+	"encoding/xml"
 	"fmt"
+	"golang.org/x/net/html/charset"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -9,6 +12,8 @@ import (
 
 type CBRData struct {
 	ValuteList []Valute `xml:"Valute"`
+	Source     string
+	XML        []byte
 }
 
 func (d CBRData) ShowCourses() {
@@ -26,7 +31,7 @@ func (d CBRData) ShowCourses() {
 	fmt.Println(str)
 }
 
-func (d CBRData) Parse() {
+func (d *CBRData) Parse() {
 	for i := 0; i < len(d.ValuteList); i++ {
 		d.ValuteList[i].SellRate = strings.Replace(d.ValuteList[i].SellRate, ",", ".", 1)
 		d.ValuteList[i].Source = "CBR"
@@ -34,19 +39,30 @@ func (d CBRData) Parse() {
 	}
 }
 
-func LoadFromSource(url string) []byte {
-	req, err := http.Get(url)
+func (data *CBRData) LoadFromSource() {
+
+	data.ValuteList = nil
+
+	req, err := http.Get(data.Source)
 	defer req.Body.Close()
-
 	if err != nil {
 		panic(err)
 	}
 
-	b, err := ioutil.ReadAll(req.Body)
-
+	data.XML, err = ioutil.ReadAll(req.Body)
 	if err != nil {
 		panic(err)
 	}
 
-	return b
+	reader := bytes.NewReader(data.XML)
+	decoder := xml.NewDecoder(reader)
+	decoder.CharsetReader = charset.NewReaderLabel
+	err = decoder.Decode(&data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (data CBRData) GetValuteList() []Valute {
+	return data.ValuteList
 }

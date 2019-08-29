@@ -11,4 +11,6 @@ type Valute struct {
 type Parser interface {
 	Parse()
 	ShowCourses()
+	LoadFromSource()
+	GetValuteList() []Valute
 }

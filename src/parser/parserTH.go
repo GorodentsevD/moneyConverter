@@ -1,31 +1,41 @@
 package parser
 
 import (
+	"bytes"
+	"encoding/xml"
 	"fmt"
+	"golang.org/x/net/html/charset"
+	"io/ioutil"
+	"net/http"
 	"strings"
 )
 
 type THData struct {
 	Descriptions []Description `xml:"item"`
 	ValuteList   []Valute
+	Source       string
+	XML          []byte
 }
 
 type Description struct {
 	Desc string `xml:"title"`
 }
 
-func (d *THData) Parse() {
+func (data *THData) Parse() {
 
+	data.ValuteList = nil
+
+	var valuteList []Valute = nil
 	var str string
-	var tokens = make([][]string, len(d.Descriptions))
+	var tokens = make([][]string, len(data.Descriptions))
 
-	for i := 0; i < len(d.Descriptions); i++ {
-		str = d.Descriptions[i].Desc
+	for i := 0; i < len(data.Descriptions); i++ {
+		str = data.Descriptions[i].Desc
 		tokens[i] = make([]string, 12)
 		tokens[i] = strings.Split(str, " ")
 	}
 
-	for i := 1; i < len(d.Descriptions); i++ {
+	for i := 1; i < len(data.Descriptions); i++ {
 		var valute Valute
 
 		valute.CharCode = tokens[i][5]
@@ -52,33 +62,49 @@ func (d *THData) Parse() {
 			}
 		}
 		valute.Source = "THB"
-		d.ValuteList = append(d.ValuteList, valute)
+		valuteList = append(valuteList, valute)
 	}
+	data.ValuteList = valuteList
 }
 
-func ShowValutes(valuteList []Valute) {
-
-	for i := 0; i < len(valuteList); i++ {
-		fmt.Printf("CHarCode = %s, Nominal = %s, SellRate = %s, BuyRate = %s\n",
-			valuteList[i].CharCode,
-			valuteList[i].Nominal,
-			valuteList[i].SellRate,
-			valuteList[i].BuyRate,
-		)
-	}
-}
-
-func (d THData) ShowCourses() {
+func (data THData) ShowCourses() {
 
 	var str string
-	for i := 0; i < len(d.ValuteList); i++ {
+	for i := 0; i < len(data.ValuteList); i++ {
 		str += fmt.Sprintf("%s, %s, %s, %s. %s\n",
-			d.ValuteList[i].CharCode,
-			d.ValuteList[i].Nominal,
-			d.ValuteList[i].SellRate,
-			d.ValuteList[i].BuyRate,
-			d.ValuteList[i].Source,
+			data.ValuteList[i].CharCode,
+			data.ValuteList[i].Nominal,
+			data.ValuteList[i].SellRate,
+			data.ValuteList[i].BuyRate,
+			data.ValuteList[i].Source,
 		)
 	}
 	fmt.Println(str)
+}
+
+func (data *THData) LoadFromSource() {
+	data.Descriptions = nil
+
+	req, err := http.Get(data.Source)
+	defer req.Body.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	data.XML, err = ioutil.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	reader := bytes.NewReader(data.XML)
+	decoder := xml.NewDecoder(reader)
+	decoder.CharsetReader = charset.NewReaderLabel
+	err = decoder.Decode(&data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (d THData) GetValuteList() []Valute {
+	return d.ValuteList
 }
