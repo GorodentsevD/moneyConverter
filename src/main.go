@@ -41,11 +41,12 @@ func main() {
 	ticker := time.NewTicker(time.Second * 60)
 	go func() {
 		for range ticker.C {
+			cbrData.LoadFromSource()
+			thData.LoadFromSource()
 			RefreshTable(&dataBase, Table, cbrData, thData)
 		}
 	}()
 
 	// запуск веб-сервера
 	StartServer(cbrData, dataBase, Table)
-
 }

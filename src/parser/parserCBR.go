@@ -51,6 +51,7 @@ func (d *CBRData) Parse() {
 func (data *CBRData) LoadFromSource() {
 	data.ValuteList = nil // очищаем список валют в структуре тк функция может вызваться в программе несколько раз
 
+	fmt.Println("HTTP GET to CBR bank...")
 	req, err := http.Get(data.Source)
 	defer req.Body.Close()
 	if err != nil {

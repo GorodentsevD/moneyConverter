@@ -23,7 +23,7 @@ type Description struct {
 	Desc string `xml:"title"`
 }
 
-// функция парсинга данных из загру
+// функция парсинга данных
 func (data *THData) Parse() {
 	// очистка списка валют
 	data.ValuteList = nil
@@ -93,6 +93,7 @@ func (data THData) ShowCourses() {
 func (data *THData) LoadFromSource() {
 	data.Descriptions = nil
 
+	fmt.Println("HTTP GET to TH bank...")
 	req, err := http.Get(data.Source)
 	defer req.Body.Close()
 	if err != nil {

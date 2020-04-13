@@ -33,7 +33,7 @@ func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 	val := db.GetAllCharCodes(dataBase, tableName)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		t, err := template.ParseFiles("templates/index.html")
+		t, err := template.ParseFiles("../templates/index.html")
 		if err != nil {
 			panic(err)
 		}
@@ -58,6 +58,7 @@ func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Write(res)
 		}
 	})
@@ -70,7 +71,7 @@ func StartServer(d parser.Parser, dataBase sqlx.DB, tableName string) {
 }
 
 // получить результат конвертирования
-func getResult(data ClientData, dataBase sqlx.DB, tableName string) float64 {
+func getResult(data ClientData, dataBase sqlx.DB, tableName string) string {
 
 	var valute1 parser.Valute
 	var valute2 parser.Valute
@@ -114,5 +115,7 @@ func getResult(data ClientData, dataBase sqlx.DB, tableName string) float64 {
 	result := value * (formattedValute1.SellRate / formattedValute1.Nominal) /
 		(formattedValute2.BuyRate / formattedValute2.Nominal)
 
-	return result
+	formattedResult := fmt.Sprintf("%.2f", result)
+
+	return formattedResult
 }
